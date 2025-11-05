@@ -215,18 +215,40 @@
         // Extrair parâmetros da URL
         function getUrlParams() {
             const params = new URLSearchParams(window.location.search);
+            
+            // Se tem parâmetro redirect, extrair dele
+            const redirectUrl = params.get('redirect');
+            if (redirectUrl) {
+                const decodedUrl = decodeURIComponent(redirectUrl);
+                const redirectParams = new URLSearchParams(decodedUrl.split('?')[1]);
+                return {
+                    token: redirectParams.get('token'),
+                    type: redirectParams.get('type'),
+                    access_token: redirectParams.get('access_token'),
+                    refresh_token: redirectParams.get('refresh_token'),
+                    token_hash: redirectParams.get('token_hash')
+                };
+            }
+            
+            // Fallback: parâmetros diretos
             return {
                 token: params.get('token'),
                 type: params.get('type'),
                 access_token: params.get('access_token'),
-                refresh_token: params.get('refresh_token')
+                refresh_token: params.get('refresh_token'),
+                token_hash: params.get('token_hash')
             };
         }
 
         // Construir deep link
         function buildDeepLink(params) {
+            // Remover parâmetros vazios
+            const cleanParams = Object.entries(params)
+                .filter(([key, value]) => value !== null && value !== undefined)
+                .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+            
             const baseUrl = 'yasfit://auth/callback';
-            const queryString = new URLSearchParams(params).toString();
+            const queryString = new URLSearchParams(cleanParams).toString();
             return `${baseUrl}?${queryString}`;
         }
 
@@ -234,8 +256,8 @@
         function init() {
             const params = getUrlParams();
             
-            // Verificar se tem token
-            if (!params.token && !params.access_token) {
+            // Verificar se tem token ou access_token
+            if (!params.token && !params.access_token && !params.token_hash) {
                 document.getElementById('error-view').style.display = 'block';
                 return;
             }
