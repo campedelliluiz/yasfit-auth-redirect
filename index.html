@@ -224,7 +224,7 @@
             return null;
         }
 
-        // Construir deep link preservando TODOS os parâmetros
+        // Construir deep link preservando a URL COMPLETA do Supabase
         function buildDeepLink() {
             const supabaseUrl = getSupabaseUrl();
             
@@ -232,15 +232,15 @@
                 return null;
             }
             
-            // Extrair apenas a query string da URL do Supabase
-            const queryString = supabaseUrl.split('?')[1];
+            // IMPORTANTE: Para PKCE flow, precisamos passar a URL COMPLETA do Supabase
+            // O Swift SDK usa supabase.auth.session(from: url) que precisa da URL original
+            // Não podemos extrair apenas os parâmetros, pois o SDK precisa validar o domínio
             
-            if (!queryString) {
-                return null;
-            }
+            // Encode da URL do Supabase para passar como parâmetro
+            const encodedUrl = encodeURIComponent(supabaseUrl);
             
-            // Manter TODOS os parâmetros originais
-            return `yasfit://auth/callback?${queryString}`;
+            // Criar deep link com a URL completa do Supabase
+            return `yasfit://auth/callback?supabase_url=${encodedUrl}`;
         }
 
         // Inicializar página
