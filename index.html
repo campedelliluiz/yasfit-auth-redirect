@@ -212,57 +212,48 @@
             return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         }
 
-        // Extrair parâmetros da URL
-        function getUrlParams() {
+        // Extrair URL completa do Supabase
+        function getSupabaseUrl() {
             const params = new URLSearchParams(window.location.search);
-            
-            // Se tem parâmetro redirect, extrair dele
             const redirectUrl = params.get('redirect');
+            
             if (redirectUrl) {
-                const decodedUrl = decodeURIComponent(redirectUrl);
-                const redirectParams = new URLSearchParams(decodedUrl.split('?')[1]);
-                return {
-                    token: redirectParams.get('token'),
-                    type: redirectParams.get('type'),
-                    access_token: redirectParams.get('access_token'),
-                    refresh_token: redirectParams.get('refresh_token'),
-                    token_hash: redirectParams.get('token_hash')
-                };
+                return decodeURIComponent(redirectUrl);
             }
             
-            // Fallback: parâmetros diretos
-            return {
-                token: params.get('token'),
-                type: params.get('type'),
-                access_token: params.get('access_token'),
-                refresh_token: params.get('refresh_token'),
-                token_hash: params.get('token_hash')
-            };
+            return null;
         }
 
-        // Construir deep link
-        function buildDeepLink(params) {
-            // Remover parâmetros vazios
-            const cleanParams = Object.entries(params)
-                .filter(([key, value]) => value !== null && value !== undefined)
-                .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+        // Construir deep link preservando TODOS os parâmetros
+        function buildDeepLink() {
+            const supabaseUrl = getSupabaseUrl();
             
-            const baseUrl = 'yasfit://auth/callback';
-            const queryString = new URLSearchParams(cleanParams).toString();
-            return `${baseUrl}?${queryString}`;
+            if (!supabaseUrl) {
+                return null;
+            }
+            
+            // Extrair apenas a query string da URL do Supabase
+            const queryString = supabaseUrl.split('?')[1];
+            
+            if (!queryString) {
+                return null;
+            }
+            
+            // Manter TODOS os parâmetros originais
+            return `yasfit://auth/callback?${queryString}`;
         }
 
         // Inicializar página
         function init() {
-            const params = getUrlParams();
+            const deepLink = buildDeepLink();
             
-            // Verificar se tem token ou access_token
-            if (!params.token && !params.access_token && !params.token_hash) {
+            // Verificar se conseguiu construir o deep link
+            if (!deepLink) {
                 document.getElementById('error-view').style.display = 'block';
                 return;
             }
 
-            const deepLink = buildDeepLink(params);
+            console.log('🔗 Deep Link:', deepLink);
             
             if (isMobile()) {
                 // Mobile: tentar abrir o app
